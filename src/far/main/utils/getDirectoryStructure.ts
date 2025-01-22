@@ -88,7 +88,7 @@ export function getDirectoryFiles(rootPath: string): FileInfo[] {
       });
     }
   }
-  dirFiles.sort((a, b) => a.name.localeCompare(b.name));
-  fileFiles.sort((a, b) => a.name.localeCompare(b.name));
+  dirFiles.sort((l, r) => l.name.localeCompare(r.name));
+  fileFiles.sort((l, r) => l.name.localeCompare(r.name));
   return [...dirFiles, ...fileFiles];
 }
