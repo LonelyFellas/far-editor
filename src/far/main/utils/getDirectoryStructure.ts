@@ -4,12 +4,7 @@ import { isEmptyDir } from ".";
 import { randomUUID } from "node:crypto";
 import configJson from "../config.json";
 
-/**
- * 获取目录结构
- * @param dirPath 目录路径
- * @returns 目录结构
- */
-export function getDirectoryStructure(dirPath: string): FileInfo | null {
+export const getProjectFiles = (dirPath: string): FileInfo | null => {
   const stats = fs.statSync(dirPath);
   const basename = path.basename(dirPath);
   const parentPath = path.dirname(dirPath);
@@ -18,7 +13,7 @@ export function getDirectoryStructure(dirPath: string): FileInfo | null {
   const isIgnoreFile = configJson.ignoreFiles.includes(basename);
   // 按需加载文件判断
   const isLazyLoadFile = configJson.lazyLoadFiles.includes(basename);
-  if (isLazyLoadFile) return null;
+  if (isIgnoreFile) return null;
 
   // 如果是文件
   if (stats.isFile()) {
@@ -35,7 +30,7 @@ export function getDirectoryStructure(dirPath: string): FileInfo | null {
     const fileFiles: FileInfo[] = [];
     if (!isLazyLoadFile) {
       fs.readdirSync(dirPath).forEach((child) => {
-        const getFileInfo = getDirectoryStructure(path.join(dirPath, child));
+        const getFileInfo = getProjectFiles(path.join(dirPath, child));
         if (getFileInfo?.type === "directory") {
           dirFiles.push(getFileInfo);
         } else if (getFileInfo?.type === "file") {
@@ -54,9 +49,46 @@ export function getDirectoryStructure(dirPath: string): FileInfo | null {
       type: "directory",
       isOpen: false,
       isActive: false,
+      isLazyLoadDir: isLazyLoadFile,
       children: [...dirFiles, ...fileFiles],
     };
   }
 
   return null;
+};
+
+export function getDirectoryFiles(rootPath: string): FileInfo[] {
+  const files = fs.readdirSync(rootPath, { withFileTypes: true });
+  const dirFiles: FileInfo[] = [];
+  const fileFiles: FileInfo[] = [];
+  const ignoreFiles = configJson.ignoreFiles;
+
+  for (const file of files) {
+    if (ignoreFiles.includes(file.name)) continue;
+    if (file.isFile()) {
+      fileFiles.push({
+        name: file.name,
+        path: file.parentPath,
+        id: randomUUID(),
+        type: "file",
+        isActive: false,
+        parentPath: file.parentPath,
+      });
+    } else if (file.isDirectory()) {
+      dirFiles.push({
+        name: file.name,
+        path: file.parentPath,
+        id: randomUUID(),
+        type: "directory",
+        isActive: false,
+        parentPath: file.parentPath,
+        isOpen: false,
+        isLazyLoadDir: true,
+        children: [],
+      });
+    }
+  }
+  dirFiles.sort((a, b) => a.name.localeCompare(b.name));
+  fileFiles.sort((a, b) => a.name.localeCompare(b.name));
+  return [...dirFiles, ...fileFiles];
 }

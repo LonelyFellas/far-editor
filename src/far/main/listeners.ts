@@ -2,7 +2,10 @@ import { dialog, ipcMain } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { getDirectoryStructure } from "./utils/getDirectoryStructure";
+import {
+  getDirectoryFiles,
+  getProjectFiles,
+} from "./utils/getDirectoryStructure";
 
 /**
  * 打开文件
@@ -16,7 +19,7 @@ ipcMain.handle("open-file", () => {
   });
 
   if (root && Array.isArray(root) && root.length > 0) {
-    const dirStructure = getDirectoryStructure(root[0]);
+    const dirStructure = getProjectFiles(root[0]);
     console.log(dirStructure);
 
     return dirStructure;
@@ -50,3 +53,10 @@ ipcMain.handle(
     }
   }
 );
+
+/**
+ * 展开或折叠文件夹
+ */
+ipcMain.handle("expand-or-collapse-file", (_, rootName: string) => {
+  return getDirectoryFiles(rootName);
+});

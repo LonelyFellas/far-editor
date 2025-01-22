@@ -10,6 +10,7 @@ declare global {
     type: "file" | "directory";
     isOpen?: boolean;
     isActive: boolean;
+    isLazyLoadDir?: boolean;
     children?: (FileInfo | null | undefined)[];
   }
   type UUID = import("node:crypto").UUID;

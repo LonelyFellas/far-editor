@@ -1,5 +1,5 @@
 import { cn, IconFont } from "@/common";
-import { readFile } from "@/ipc";
+import { expandOrCollapseFile, readFile } from "@/ipc";
 import { useProject } from "@/store";
 import { useFileContent } from "@/store/useFileContent.store";
 import { createContext, Fragment, useContext, useState } from "react";
@@ -81,11 +81,18 @@ interface FileItemProps {
   paddingLeft: number;
 }
 function FileItem(props: FileItemProps) {
+  const [childFiles, setChildFiles] = useState<FileInfo[]>([]);
   const { selectedId, handleSelectedId } = useContext(SliderContext);
   const [isOpen, setIsOpen] = useState(false);
   const isDir = props.fileInfo.type === "directory";
 
   const handleSingleClick = async () => {
+    console.log(props.fileInfo);
+    if (props.fileInfo.isLazyLoadDir) {
+      const files = await expandOrCollapseFile(props.fileInfo.path);
+      console.log(files);
+      setChildFiles(files);
+    }
     handleSelectedId(props.fileInfo.id, isDir, props.fileInfo.path);
     setIsOpen(!isOpen);
   };
@@ -136,7 +143,10 @@ function FileItem(props: FileItemProps) {
       </div>
       {isDir && isOpen && (
         <>
-          {props.fileInfo.children?.map((file, index) => (
+          {(props.fileInfo.isLazyLoadDir
+            ? childFiles
+            : props.fileInfo.children
+          )?.map((file, index) => (
             <Fragment key={file?.id ?? index}>
               {file ? (
                 <FileItem
