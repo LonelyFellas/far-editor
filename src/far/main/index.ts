@@ -5,8 +5,7 @@ import path from "node:path";
 import os from "node:os";
 import "./listeners";
 import chokidar from "chokidar";
-
-// import { update } from "./update";
+import { Chokidar } from "./chokidar";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -65,6 +64,7 @@ async function createWindow() {
       // contextIsolation: false,
     },
   });
+  new Chokidar(win);
 
   if (!app.isPackaged) {
     win.loadURL(VITE_DEV_SERVER_URL!);

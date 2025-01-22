@@ -1,12 +1,8 @@
 import { cn, IconFont } from "@/common";
+import { readFile } from "@/ipc";
 import { useProject } from "@/store";
-import {
-  createContext,
-  Fragment,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { useFileContent } from "@/store/useFileContent.store";
+import { createContext, Fragment, useContext, useState } from "react";
 
 const SliderContext = createContext<{
   selectedId: string;
@@ -19,9 +15,29 @@ export default function Slider() {
   const [collapsed, setCollapsed] = useState(true);
   const projectInfo = useProject((state) => state.projectInfo);
   const [selectedId, setSelectedId] = useState(projectInfo.id);
-
-  const handleSelectedId = (id: UUID, isDir: boolean, fileName: string) => {
+  const setFileContent = useFileContent((state) => state.setFileContent);
+  const setSelectedFileInfo = useFileContent(
+    (state) => state.setSelectedFileInfo
+  );
+  const handleSelectedId = async (
+    id: UUID,
+    isDir: boolean,
+    fileName: string
+  ) => {
     setSelectedId(id);
+
+    // 如何是单纯的文件，则需要读取文件内容
+    if (!isDir) {
+      const fileContent = await readFile(fileName);
+      setFileContent(fileContent);
+      setSelectedFileInfo({
+        id,
+        name: fileName,
+        path: fileName,
+        // 文件类型
+        type: fileName.split(".").pop(),
+      });
+    }
   };
   return (
     <div className="my-scrollable-div h-full overflow-y-auto pt-1.5">
@@ -70,12 +86,7 @@ function FileItem(props: FileItemProps) {
   const isDir = props.fileInfo.type === "directory";
 
   const handleSingleClick = async () => {
-    // if (!isOpen && props.file.isDir) {
-    //   // 展开状态，查询所有子文件数量
-    //   const files = await expandOrCollapseFile(props.file.path);
-    //   setChildFiles(files);
-    // }
-    // handleSelectedId(props.file.id, props.file.isDir, props.file.path);
+    handleSelectedId(props.fileInfo.id, isDir, props.fileInfo.path);
     setIsOpen(!isOpen);
   };
 
