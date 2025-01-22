@@ -1,8 +1,16 @@
-import { cn, IconFont } from "@/common";
-import { expandOrCollapseFile, readFile } from "@/ipc";
+import { cn, IconFont, useUpdateEffect } from "@/common";
+import { expandOrCollapseFile, getProjectInfo, readFile } from "@/ipc/invoke";
+import { useFileWatcher } from "@/ipc/on";
 import { useProject } from "@/store";
 import { useFileContent } from "@/store/useFileContent.store";
-import { createContext, Fragment, useContext, useState } from "react";
+import {
+  createContext,
+  Fragment,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 const SliderContext = createContext<{
   selectedId: string;
@@ -14,11 +22,21 @@ const SliderContext = createContext<{
 export default function Slider() {
   const [collapsed, setCollapsed] = useState(true);
   const projectInfo = useProject((state) => state.projectInfo);
+  const setProjectInfo = useProject((state) => state.setProjectInfo);
   const [selectedId, setSelectedId] = useState(projectInfo.id);
   const setFileContent = useFileContent((state) => state.setFileContent);
   const setSelectedFileInfo = useFileContent(
     (state) => state.setSelectedFileInfo
   );
+
+  useFileWatcher((event) => {
+    getProjectInfo().then((res) => {
+      if (res) {
+        setProjectInfo(res);
+      }
+    });
+  });
+  useEffect(() => {}, []);
   const handleSelectedId = async (
     id: UUID,
     isDir: boolean,
@@ -81,16 +99,18 @@ interface FileItemProps {
   paddingLeft: number;
 }
 function FileItem(props: FileItemProps) {
+  const [isFocusVisible, setIsFocusVisible] = useState(false);
   const [childFiles, setChildFiles] = useState<FileInfo[]>([]);
-  const { selectedId, handleSelectedId } = useContext(SliderContext);
   const [isOpen, setIsOpen] = useState(false);
+  const modifyInputRef = useRef<HTMLInputElement>(null);
+  const fileItemRef = useRef<HTMLDivElement>(null);
+  const { selectedId, handleSelectedId } = useContext(SliderContext);
   const isDir = props.fileInfo.type === "directory";
 
   const handleSingleClick = async () => {
-    console.log(props.fileInfo);
     if (props.fileInfo.isLazyLoadDir) {
+      // 懒加载目录
       const files = await expandOrCollapseFile(props.fileInfo.path);
-      console.log(files);
       setChildFiles(files);
     }
     handleSelectedId(props.fileInfo.id, isDir, props.fileInfo.path);
@@ -99,10 +119,39 @@ function FileItem(props: FileItemProps) {
 
   const isSelected = selectedId === props.fileInfo.id; // 是否选择当前文件
 
+  const handleKeyboardEnter = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    console.log("enter");
+    if (e.key === "Enter") {
+      if (!isFocusVisible) {
+        setIsFocusVisible(true);
+      } else {
+        setIsFocusVisible(false);
+        fileItemRef.current?.focus();
+      }
+      // handleSingleClick();
+    }
+  };
+
+  useUpdateEffect(() => {
+    if (isFocusVisible) {
+      modifyInputRef.current?.setSelectionRange(
+        0,
+        props.fileInfo.name.lastIndexOf(".")
+      );
+    }
+  }, [isFocusVisible]);
+
+  const handleFileItemBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    setIsFocusVisible(false);
+  };
+
   // 文件项
   return (
     <>
       <div
+        onKeyDown={handleKeyboardEnter}
+        ref={fileItemRef}
+        tabIndex={0}
         className={cn(
           "flex h-25px items-center gap-1.5 focus:outline-none focus-visible:outline-none",
           {
@@ -113,7 +162,7 @@ function FileItem(props: FileItemProps) {
         onClick={handleSingleClick}
       >
         <div
-          className="flex items-center gap-1.5 w-full z-10"
+          className="flex items-center gap-1.5 w-full h-full"
           style={{
             paddingLeft: isDir ? props.paddingLeft : props.paddingLeft + 16,
           }}
@@ -133,12 +182,23 @@ function FileItem(props: FileItemProps) {
             className="text-white"
           />
           {/* 文件名 */}
-          <span
-            className="flex-1 select-none block text-14px text-ellipsis whitespace-nowrap overflow-hidden"
-            title={props.fileInfo.name}
-          >
-            {props.fileInfo.name}
-          </span>
+          {isFocusVisible ? (
+            <input
+              ref={modifyInputRef}
+              defaultValue={props.fileInfo.name}
+              onBlur={handleFileItemBlur}
+              autoFocus
+              className="flex-1 text-14px h-full bg-transparent outline-none border-[1px] border-solid border-red-500"
+              title={props.fileInfo.name}
+            />
+          ) : (
+            <span
+              className="flex-1 select-none block text-14px text-ellipsis whitespace-nowrap overflow-hidden"
+              title={props.fileInfo.name}
+            >
+              {props.fileInfo.name}
+            </span>
+          )}
         </div>
       </div>
       {isDir && isOpen && (

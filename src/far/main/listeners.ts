@@ -10,17 +10,21 @@ import {
 /**
  * 打开文件
  */
-ipcMain.handle("open-file", () => {
-  const root = dialog.showOpenDialogSync({
-    // 用户目录
-    defaultPath: path.join(os.homedir(), "Dev/far-editor"),
-    // 只能选择文件夹
-    properties: ["openDirectory"],
-  });
+ipcMain.handle("open-file", (_, isOpenDialog: boolean) => {
+  let root: string[] | undefined = [];
+  if (isOpenDialog) {
+    root = dialog.showOpenDialogSync({
+      // 用户目录
+      defaultPath: path.join(os.homedir(), "Dev/far-editor"),
+      // 只能选择文件夹
+      properties: ["openDirectory"],
+    });
+  } else {
+    root = [path.join(os.homedir(), "Dev/far-editor")];
+  }
 
   if (root && Array.isArray(root) && root.length > 0) {
     const dirStructure = getProjectFiles(root[0]);
-    console.log(dirStructure);
 
     return dirStructure;
   }

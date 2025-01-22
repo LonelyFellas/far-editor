@@ -1,12 +1,11 @@
-import { openFile } from "@/ipc";
+import { getProjectInfo } from "@/ipc/invoke";
 import { useProject } from "@/store";
 
 export default function MainEmpty() {
   const setProjectInfo = useProject((state) => state.setProjectInfo);
 
   const handleOpenFile = async () => {
-    const filesRes = await openFile();
-    console.log(filesRes);
+    const filesRes = await getProjectInfo(true);
     if (filesRes) {
       setProjectInfo(filesRes);
     }

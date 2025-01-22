@@ -16,6 +16,7 @@ export class Chokidar {
       })
       .on("all", (event, path) => {
         console.log(event, path);
+        win.webContents.send("file-watcher", event, path);
       });
   }
 }

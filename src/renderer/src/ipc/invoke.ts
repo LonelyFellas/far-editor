@@ -1,9 +1,12 @@
 /**
  * 打开工程文件夹
+ * @param isOpenDialog 是否打开文件夹选择对话框
  * @returns 文件夹信息
  */
-export async function openFile(): Promise<FileInfo | null> {
-  const fileRes = await window.ipcRenderer.invoke("open-file");
+export async function getProjectInfo(
+  isOpenDialog: boolean = false
+): Promise<FileInfo | null> {
+  const fileRes = await window.ipcRenderer.invoke("open-file", isOpenDialog);
   return fileRes;
 }
 
