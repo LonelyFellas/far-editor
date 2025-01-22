@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import os from "node:os";
 import "./listeners";
+import chokidar from "chokidar";
+
 // import { update } from "./update";
 
 const require = createRequire(import.meta.url);

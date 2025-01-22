@@ -1,13 +1,17 @@
+import type { UUID } from "node:crypto";
+
 declare global {
   interface FileInfo {
     name: string;
     parentPath: string;
     path: string;
-    isDir: boolean;
-    isEmpty: boolean;
+    isEmptyDir?: boolean;
+    id: UUID;
+    type: "file" | "directory";
+    isOpen?: boolean;
     isActive: boolean;
-    id: string;
-    files: FileInfo[];
+    children?: (FileInfo | null | undefined)[];
   }
+  type UUID = import("node:crypto").UUID;
 }
 export {};

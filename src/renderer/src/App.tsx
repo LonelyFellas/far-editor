@@ -8,7 +8,7 @@ import Slider from "./layout/slider";
 
 export default function App() {
   const isEmptyProject =
-    useProject((state) => state.projectInfo.files).length === 0;
+    useProject((state) => state.projectInfo.children)?.length === 0;
 
   return (
     <div className="bg-primary h-screen flex flex-col">

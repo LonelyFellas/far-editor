@@ -8,7 +8,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vite",
-    "build": "tsc && vite build --emptyOutDir && electron-builder"
+    "build": "tsc && vite build --emptyOutDir && electron-builder",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,9 @@
     "autoprefixer": "^10.4.20",
     "electron": "^34.0.0",
     "electron-builder": "^25.1.8",
+    "eslint": "^9.18.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.18",
     "postcss": "^8.5.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -45,8 +49,10 @@
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
     "allotment": "^1.20.2",
+    "chokidar": "^4.0.3",
     "clsx": "^2.1.1",
     "electron-log": "^5.2.4",
+    "hotkeys-react": "^0.0.4",
     "monaco-editor": "^0.52.2",
     "tailwind-merge": "^2.6.0",
     "zustand": "^5.0.3"

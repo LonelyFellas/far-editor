@@ -7,7 +7,7 @@ interface IconFontProps {
   onClick?: () => void;
 }
 export default function IconFont(props: IconFontProps) {
-  const handleClick = () => {};
+  const handleClick = () => props.onClick?.();
   return (
     <svg
       onClick={handleClick}

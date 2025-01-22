@@ -1,162 +1,143 @@
-import { Fragment, useRef, useState, createContext, useContext } from "react";
+import { cn, IconFont } from "@/common";
 import { useProject } from "@/store";
-import { IconFont, useKeyboardEnter } from "@common";
-import { cn } from "@/common/utils";
-import { expandOrCollapseFile, readFile } from "@/ipc";
-import { useFileContent } from "@/store/useFileContent.store";
+import {
+  createContext,
+  Fragment,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 const SliderContext = createContext<{
   selectedId: string;
-  handleSelectedId: (id: string, isDir: boolean, fileName: string) => void;
-  sliderWidth: number;
+  handleSelectedId: (id: UUID, isDir: boolean, fileName: string) => void;
 }>({
   selectedId: "",
   handleSelectedId: () => {},
-  sliderWidth: 0, // TODO: 多余，之后删除
 });
 export default function Slider() {
+  const [collapsed, setCollapsed] = useState(true);
   const projectInfo = useProject((state) => state.projectInfo);
-  const setFileContent = useFileContent((state) => state.setFileContent);
-  const setSelectedFileInfo = useFileContent(
-    (state) => state.setSelectedFileInfo
-  );
   const [selectedId, setSelectedId] = useState(projectInfo.id);
-  const sliderRef = useRef<HTMLDivElement>(null);
 
-  const handleSelectedId = async (
-    id: string,
-    isDir: boolean,
-    fileName: string
-  ) => {
+  const handleSelectedId = (id: UUID, isDir: boolean, fileName: string) => {
     setSelectedId(id);
-    // 如何是单纯的文件，则需要读取文件内容
-    if (!isDir) {
-      const fileContent = await readFile(fileName);
-      setFileContent(fileContent);
-      setSelectedFileInfo({
-        id,
-        name: fileName,
-        path: fileName,
-        // 文件类型
-        type: fileName.split(".").pop(),
-      });
-    }
   };
-
   return (
-    // 文件列表
-    <div
-      className="my-scrollable-div py-2 h-full overflow-y-auto"
-      ref={sliderRef}
-    >
-      <SliderContext.Provider
-        value={{
-          selectedId,
-          handleSelectedId,
-          sliderWidth: sliderRef.current?.clientWidth ?? 0,
-        }}
-      >
-        {[projectInfo].map((file) => (
-          <Fragment key={file.name}>
-            <FileItem
-              file={file}
-              isActive={file.isActive}
-              index={0}
-              defaultFiles={file.files}
-            />
-          </Fragment>
-        ))}
-      </SliderContext.Provider>
+    <div className="my-scrollable-div h-full overflow-y-auto pt-1.5">
+      <div className="flex items-center justify-between pl-[8px]">
+        <div
+          className="select-none text-12px font-bold flex items-center gap-1.5 cursor-pointer"
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          <IconFont
+            name="arrow"
+            className={cn("text-white", {
+              "rotate-90": collapsed,
+            })}
+          />
+          {projectInfo.name.toUpperCase()}
+        </div>
+      </div>
+      <div className="flex flex-col">
+        <SliderContext
+          value={{
+            selectedId,
+            handleSelectedId,
+          }}
+        >
+          {collapsed &&
+            projectInfo.children?.map((file, index) => (
+              <Fragment key={file?.id ?? index}>
+                {file ? (
+                  <FileItem key={file?.id} fileInfo={file} paddingLeft={16} />
+                ) : null}
+              </Fragment>
+            ))}
+        </SliderContext>
+      </div>
     </div>
   );
 }
 
 interface FileItemProps {
-  file: FileInfo;
-  isActive: boolean;
-  index: number;
-  defaultFiles?: FileInfo[];
+  fileInfo: FileInfo;
+  paddingLeft: number;
 }
 function FileItem(props: FileItemProps) {
-  const handleKeyboardEnter = useKeyboardEnter(() => {
-    console.log("enter");
-  });
   const { selectedId, handleSelectedId } = useContext(SliderContext);
+  const [isOpen, setIsOpen] = useState(false);
+  const isDir = props.fileInfo.type === "directory";
 
-  const [isOpen, setIsOpen] = useState(props.isActive);
-  const [childFiles, setChildFiles] = useState<FileInfo[]>(
-    props.defaultFiles || []
-  );
   const handleSingleClick = async () => {
-    if (!isOpen && props.file.isDir) {
-      // 展开状态，查询所有子文件数量
-      const files = await expandOrCollapseFile(props.file.path);
-      setChildFiles(files);
-    }
-    handleSelectedId(props.file.id, props.file.isDir, props.file.path);
+    // if (!isOpen && props.file.isDir) {
+    //   // 展开状态，查询所有子文件数量
+    //   const files = await expandOrCollapseFile(props.file.path);
+    //   setChildFiles(files);
+    // }
+    // handleSelectedId(props.file.id, props.file.isDir, props.file.path);
     setIsOpen(!isOpen);
   };
 
-  const isSelected = selectedId === props.file.id;
+  const isSelected = selectedId === props.fileInfo.id; // 是否选择当前文件
+
+  // 文件项
   return (
-    // 文件项
     <>
       <div
-        onKeyDown={handleKeyboardEnter}
-        className={cn("flex items-center gap-1.5 px-4", {
-          "hover:bg-bg_hover": !isSelected,
-          "bg-bg_active": isSelected,
-        })}
+        className={cn(
+          "flex h-25px items-center gap-1.5 focus:outline-none focus-visible:outline-none",
+          {
+            "hover:bg-bg_hover": !isSelected,
+            "bg-bg_active": isSelected,
+          }
+        )}
         onClick={handleSingleClick}
       >
-        <div className="flex items-center gap-1.5 w-full z-10">
+        <div
+          className="flex items-center gap-1.5 w-full z-10"
+          style={{
+            paddingLeft: isDir ? props.paddingLeft : props.paddingLeft + 16,
+          }}
+        >
           {/* 目录展开图标 */}
-          <IconFont
-            name="arrow"
-            className={cn("text-white invisible", {
-              visible: props.file.isDir && !props.file.isEmpty,
-              "rotate-90": isOpen,
-            })}
-          />
+          {isDir ? (
+            <IconFont
+              name="arrow"
+              className={cn("text-white", {
+                "rotate-90": isOpen,
+              })}
+            />
+          ) : null}
           {/* 文件图标 */}
           <IconFont
-            name={
-              props.file.isDir
-                ? `dir_${isOpen ? "expand" : "collapse"}`
-                : "file"
-            }
+            name={isDir ? `dir_${isOpen ? "expand" : "collapse"}` : "file"}
             className="text-white"
           />
           {/* 文件名 */}
           <span
-            className="flex-1 select-none block text-ellipsis whitespace-nowrap overflow-hidden"
-            title={props.file.name}
+            className="flex-1 select-none block text-14px text-ellipsis whitespace-nowrap overflow-hidden"
+            title={props.fileInfo.name}
           >
-            {props.file.name}
+            {props.fileInfo.name}
           </span>
         </div>
-
-        {/* <div
-          className={cn("h-18px bg-transparent absolute left-0", {
-            "group-hover:bg-bg_hover": !isSelected,
-            "bg-bg_active": isSelected,
-          })}
-          style={{ width: sliderWidth }}
-        ></div> */}
       </div>
-
-      <div className="pl-4">
-        {/* 子文件 */}
-        {isOpen &&
-          childFiles.map((file) => (
-            <FileItem
-              file={file}
-              isActive={file.isActive}
-              key={file.name}
-              index={props.index}
-            />
+      {isDir && isOpen && (
+        <>
+          {props.fileInfo.children?.map((file, index) => (
+            <Fragment key={file?.id ?? index}>
+              {file ? (
+                <FileItem
+                  key={file?.id ?? index}
+                  fileInfo={file}
+                  paddingLeft={props.paddingLeft + 8}
+                />
+              ) : null}
+            </Fragment>
           ))}
-      </div>
+        </>
+      )}
     </>
   );
 }

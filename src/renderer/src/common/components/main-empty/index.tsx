@@ -6,7 +6,10 @@ export default function MainEmpty() {
 
   const handleOpenFile = async () => {
     const filesRes = await openFile();
-    setProjectInfo(filesRes);
+    console.log(filesRes);
+    if (filesRes) {
+      setProjectInfo(filesRes);
+    }
   };
   return (
     <div className="h-full all_flex">
