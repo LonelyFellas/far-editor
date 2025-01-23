@@ -3,12 +3,11 @@ interface InvokeChannelMap {
   "read-file": [[string], string];
   "rename-file": [[string, string, string], boolean];
   "expand-or-collapse-file": [[string], FileInfo[]];
-  "file-watcher": [[string], boolean];
 }
 
 type OnMapValue<T = null> = GenericsFn<[Electron.IpcRendererEvent, T], void>;
 interface OnChannelMap {
-  "file-watcher": OnMapValue<string>;
+  "file-watcher": OnMapValue<string, "add" | "unlink">;
 }
 
 interface IpcRenderer extends Omit<IpcRenderer, "invoke" | "send"> {

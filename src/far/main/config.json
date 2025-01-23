@@ -5,6 +5,7 @@
   },
   "layout": {
   },
-  "ignoreFiles": [".DS_Store",  ".git"],
+  "ignoreFiles": [".DS_Store",  ".git/*"],
   "lazyLoadFiles": ["node_modules"]
 }
+

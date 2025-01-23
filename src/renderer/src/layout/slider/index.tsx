@@ -29,7 +29,8 @@ export default function Slider() {
     (state) => state.setSelectedFileInfo
   );
 
-  useFileWatcher((event) => {
+  useFileWatcher((e: any, path: string, eventName: "add" | "unlink") => {
+    console.log({ e, path, eventName });
     // getProjectInfo().then((res) => {
     //   if (res) {
     //     setProjectInfo(res);
@@ -65,6 +66,7 @@ export default function Slider() {
     parentPath = `${parentPath}/`;
     const paths = parentPath.replace(`${projectInfo.path}/`, "").split("/");
 
+    // 递归修改文件状态
     const modifyChildrenTree = (paths: string[], children: any[]): any[] => {
       const path = paths[0];
       if (path === "") {
@@ -81,6 +83,7 @@ export default function Slider() {
           : item
       );
     };
+
     setProjectInfo({
       ...projectInfo,
       children: modifyChildrenTree(paths, projectInfo.children as any[]),
